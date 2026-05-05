@@ -1,0 +1,14 @@
+{
+  "batch_size": 4,
+  "bce_seg_loss_weight": 1.0,
+  "cls_loss_weight": 1.0,
+  "data_root": "data/synthetic",
+  "dice_loss_weight": 1.0,
+  "epochs": 1,
+  "image_size": 128,
+  "learning_rate": 0.001,
+  "num_workers": 0,
+  "run_dir": "runs/smoke",
+  "seed": 42,
+  "weight_decay": 0.0001
+}

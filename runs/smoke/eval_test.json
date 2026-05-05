@@ -1,0 +1,21 @@
+{
+  "checkpoint": "runs/smoke/checkpoints/best.pt",
+  "cls_accuracy": 0.875,
+  "cls_confusion_matrix": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      7
+    ]
+  ],
+  "cls_f1": 0.9333333333333333,
+  "cls_precision": 0.875,
+  "cls_recall": 1.0,
+  "dice": 0.5271939337253571,
+  "loss_total": 1.8740026950836182,
+  "miou": 0.3777919579297304,
+  "split": "test"
+}
