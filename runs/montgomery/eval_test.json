@@ -1,0 +1,21 @@
+{
+  "checkpoint": "runs/montgomery/checkpoints/best.pt",
+  "cls_accuracy": 0.75,
+  "cls_confusion_matrix": [
+    [
+      1,
+      1
+    ],
+    [
+      0,
+      2
+    ]
+  ],
+  "cls_f1": 0.8,
+  "cls_precision": 0.6666666666666666,
+  "cls_recall": 1.0,
+  "dice": 0.4349307492375374,
+  "loss_total": 2.051256537437439,
+  "miou": 0.28075113892555237,
+  "split": "test"
+}

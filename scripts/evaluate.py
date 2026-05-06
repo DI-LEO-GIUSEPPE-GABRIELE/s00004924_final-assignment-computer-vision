@@ -1,7 +1,13 @@
 from __future__ import annotations
 
-from pathlib import Path
+"""
+Evaluation script for the multi-task segmentation + classification model.
 
+It loads a checkpoint, runs evaluation on the selected split, and writes a JSON
+compatible with scripts/make_report.py.
+"""
+
+from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -20,10 +26,10 @@ def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data-root", type=Path, default=Path("data/synthetic"))
+    parser.add_argument("--data-root", type=Path, default=Path("data/montgomery"))
     parser.add_argument("--split", type=str, default="test", choices=["train", "val", "test"])
-    parser.add_argument("--checkpoint", type=Path, default=Path("runs/mtl_unet/checkpoints/best.pt"))
-    parser.add_argument("--out", type=Path, default=Path("runs/mtl_unet/eval.json"))
+    parser.add_argument("--checkpoint", type=Path, default=Path("runs/montgomery/checkpoints/best.pt"))
+    parser.add_argument("--out", type=Path, default=Path("runs/montgomery/eval_test.json"))
     parser.add_argument("--image-size", type=int, default=256)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--num-workers", type=int, default=2)

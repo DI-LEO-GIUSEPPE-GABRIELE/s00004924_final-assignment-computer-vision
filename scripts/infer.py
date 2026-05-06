@@ -1,7 +1,15 @@
 from __future__ import annotations
 
-from pathlib import Path
+"""
+Single-image inference for the multi-task model.
 
+Outputs:
+- predicted classification probability
+- post-processed binary mask
+- overlay visualization
+"""
+
+from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -33,8 +41,8 @@ def main() -> None:
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", type=Path, required=True)
-    parser.add_argument("--checkpoint", type=Path, default=Path("runs/mtl_unet/checkpoints/best.pt"))
-    parser.add_argument("--out-dir", type=Path, default=Path("runs/mtl_unet/infer"))
+    parser.add_argument("--checkpoint", type=Path, default=Path("runs/montgomery/checkpoints/best.pt"))
+    parser.add_argument("--out-dir", type=Path, default=Path("runs/montgomery/infer"))
     parser.add_argument("--image-size", type=int, default=256)
     parser.add_argument("--threshold", type=float, default=0.5)
     args = parser.parse_args()

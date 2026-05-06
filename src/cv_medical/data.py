@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+"""
+Dataset utilities for a joint segmentation + classification task.
+
+Expected on-disk format per split:
+- images/*.png (grayscale or RGB, loaded as grayscale)
+- masks/*.png (binary mask, loaded as grayscale then thresholded)
+- labels.csv with columns: id,label where id matches the image/mask stem.
+"""
+
 import csv
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +22,8 @@ from torch.utils.data import Dataset
 
 @dataclass(frozen=True)
 class Sample:
+    """A single sample returned by the dataset and used by the training loop."""
+
     image: torch.Tensor
     mask: torch.Tensor
     label: torch.Tensor
@@ -20,6 +31,8 @@ class Sample:
 
 
 def _read_labels_csv(path: Path) -> dict[str, int]:
+    """Reads a split labels.csv into a dict mapping sample_id -> int label (0/1)."""
+
     labels: dict[str, int] = {}
     with path.open("r", newline="") as f:
         reader = csv.DictReader(f)
@@ -30,21 +43,29 @@ def _read_labels_csv(path: Path) -> dict[str, int]:
 
 
 def _load_grayscale(path: Path) -> np.ndarray:
+    """Loads an image file and converts it to uint8 grayscale."""
+
     img = Image.open(path).convert("L")
     return np.array(img, dtype=np.uint8)
 
 
 def _preprocess_image_u8(img_u8: np.ndarray) -> np.ndarray:
+    """Applies simple denoising in uint8 space."""
+
     img_u8 = cv2.medianBlur(img_u8, 3)
     return img_u8
 
 
 def _resize(img: np.ndarray, size: int, is_mask: bool) -> np.ndarray:
+    """Resizes an image/mask to a square size using an interpolation suitable for each type."""
+
     interp = cv2.INTER_NEAREST if is_mask else cv2.INTER_AREA
     return cv2.resize(img, (size, size), interpolation=interp)
 
 
 def _random_augment(img: np.ndarray, mask: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
+    """Applies paired geometric augmentation (flip/rotate) to keep image and mask aligned."""
+
     if rng.random() < 0.5:
         img = np.fliplr(img)
         mask = np.fliplr(mask)
@@ -60,6 +81,8 @@ def _random_augment(img: np.ndarray, mask: np.ndarray, rng: np.random.Generator)
 
 
 class MedicalSegClsDataset(Dataset[Sample]):
+    """PyTorch Dataset for paired image+mask with an additional binary label."""
+
     def __init__(
         self,
         root: Path,
@@ -98,6 +121,8 @@ class MedicalSegClsDataset(Dataset[Sample]):
         return len(self.sample_ids)
 
     def __getitem__(self, idx: int) -> Sample:
+        """Loads and preprocesses a single sample (image normalization is per-image)."""
+
         sample_id = self.sample_ids[idx]
         img_path = self.images_dir / f"{sample_id}.png"
         mask_path = self.masks_dir / f"{sample_id}.png"
@@ -128,6 +153,8 @@ class MedicalSegClsDataset(Dataset[Sample]):
 
 
 def collate_samples(batch: list[Sample]) -> Sample:
+    """Batches Samples into a single Sample containing stacked tensors."""
+
     images = torch.stack([b.image for b in batch], dim=0)
     masks = torch.stack([b.mask for b in batch], dim=0)
     labels = torch.stack([b.label for b in batch], dim=0)

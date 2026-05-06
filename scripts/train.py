@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+"""
+Train script for the multi-task segmentation + classification model.
+
+It expects a dataset in the standard folder format described in README.md and
+saves checkpoints + metrics under --run-dir.
+"""
+
 from pathlib import Path
 import sys
 

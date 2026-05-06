@@ -1,15 +1,26 @@
 from __future__ import annotations
 
+"""
+Loss functions for segmentation + classification multi-task learning.
+
+- Classification: BCEWithLogitsLoss on a single logit per image.
+- Segmentation: BCEWithLogitsLoss + Soft Dice loss on a single-channel mask.
+"""
+
 import torch
 from torch import nn
 
 
 class SoftDiceLoss(nn.Module):
+    """Soft Dice loss for binary segmentation using sigmoid probabilities."""
+
     def __init__(self, eps: float = 1e-6) -> None:
         super().__init__()
         self.eps = eps
 
     def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        """Computes 1 - Dice(logits, targets) averaged over batch."""
+
         probs = torch.sigmoid(logits)
         probs = probs.reshape(probs.shape[0], -1)
         targets = targets.reshape(targets.shape[0], -1)
@@ -20,6 +31,8 @@ class SoftDiceLoss(nn.Module):
 
 
 class MultiTaskLoss(nn.Module):
+    """Weighted combination of classification BCE and segmentation BCE + Dice."""
+
     def __init__(
         self,
         cls_weight: float,
@@ -41,6 +54,8 @@ class MultiTaskLoss(nn.Module):
         seg_targets: torch.Tensor,
         cls_targets: torch.Tensor,
     ) -> dict[str, torch.Tensor]:
+        """Returns a dict with total loss and detached per-component losses."""
+
         cls_loss = self.cls_bce(cls_logits, cls_targets)
         seg_bce_loss = self.seg_bce(seg_logits, seg_targets)
         seg_dice_loss = self.dice(seg_logits, seg_targets)

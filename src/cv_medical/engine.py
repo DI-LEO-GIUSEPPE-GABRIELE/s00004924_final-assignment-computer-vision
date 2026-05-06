@@ -1,5 +1,17 @@
 from __future__ import annotations
 
+"""
+Training and evaluation loops for the multi-task model.
+
+The model outputs:
+- seg_logits: (B, 1, H, W)
+- cls_logits: (B, 1)
+
+Metrics are computed for:
+- segmentation: Dice and mIoU
+- classification: Accuracy/Precision/Recall/F1 + Confusion Matrix
+"""
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -16,6 +28,8 @@ from .utils import atomic_torch_save, ensure_dir, save_json
 
 @dataclass(frozen=True)
 class EpochResult:
+    """Aggregated metrics for one evaluation pass."""
+
     loss_total: float
     dice: float
     miou: float
@@ -27,6 +41,8 @@ class EpochResult:
 
 
 def _as_float(x: torch.Tensor) -> float:
+    """Converts a 0-dim tensor to a Python float."""
+
     return float(x.detach().cpu().item())
 
 
@@ -38,6 +54,8 @@ def evaluate(
     loss_fn: MultiTaskLoss,
     seg_threshold: float = 0.5,
 ) -> EpochResult:
+    """Runs a full evaluation pass and returns aggregated metrics."""
+
     model.eval()
     total_loss = 0.0
     n_batches = 0
@@ -95,6 +113,8 @@ def train(
     run_dir: Path,
     seg_threshold: float = 0.5,
 ) -> dict[str, EpochResult]:
+    """Trains for a fixed number of epochs, saving best/last checkpoints and latest metrics."""
+
     ensure_dir(run_dir)
     ckpt_dir = ensure_dir(run_dir / "checkpoints")
 
@@ -122,13 +142,16 @@ def train(
             total_loss += _as_float(loss)
             n_batches += 1
 
-        train_res = evaluate(model, train_loader, device, loss_fn, seg_threshold=seg_threshold)
-        val_res = evaluate(model, val_loader, device, loss_fn, seg_threshold=seg_threshold)
+        train_res = evaluate(model, train_loader, device,
+                             loss_fn, seg_threshold=seg_threshold)
+        val_res = evaluate(model, val_loader, device,
+                           loss_fn, seg_threshold=seg_threshold)
 
         history[f"train_epoch_{epoch}"] = train_res
         history[f"val_epoch_{epoch}"] = val_res
 
-        save_json(run_dir / "latest_metrics.json", {"epoch": epoch, "train": train_res.__dict__, "val": val_res.__dict__})
+        save_json(run_dir / "latest_metrics.json",
+                  {"epoch": epoch, "train": train_res.__dict__, "val": val_res.__dict__})
 
         ckpt = {
             "epoch": epoch,

@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+"""
+Generates a short Technical Analysis PDF (max 10 pages) from an evaluation JSON.
+
+Input: JSON produced by scripts/evaluate.py
+Output: a PDF containing problem statement, methodology, results, failure analysis, and ethics.
+"""
+
 from pathlib import Path
 
 import json
@@ -10,6 +17,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 
 def _page_text(pdf: PdfPages, title: str, lines: list[str]) -> None:
+    """Adds a text-only page to the PDF."""
+
     fig = plt.figure(figsize=(8.27, 11.69))
     fig.suptitle(title, fontsize=18, y=0.97)
     y = 0.92
@@ -21,6 +30,8 @@ def _page_text(pdf: PdfPages, title: str, lines: list[str]) -> None:
 
 
 def _page_metrics_table(pdf: PdfPages, title: str, metrics: dict[str, float]) -> None:
+    """Adds a metrics table page to the PDF."""
+
     fig = plt.figure(figsize=(8.27, 11.69))
     ax = fig.add_subplot(111)
     ax.axis("off")
@@ -28,7 +39,8 @@ def _page_metrics_table(pdf: PdfPages, title: str, metrics: dict[str, float]) ->
 
     rows = sorted(metrics.items(), key=lambda kv: kv[0])
     cell_text = [[k, f"{v:.4f}"] for k, v in rows]
-    table = ax.table(cellText=cell_text, colLabels=["Metric", "Value"], cellLoc="left", loc="center")
+    table = ax.table(cellText=cell_text, colLabels=[
+                     "Metric", "Value"], cellLoc="left", loc="center")
     table.auto_set_font_size(False)
     table.set_fontsize(10)
     table.scale(1.0, 1.5)
@@ -37,6 +49,8 @@ def _page_metrics_table(pdf: PdfPages, title: str, metrics: dict[str, float]) ->
 
 
 def _page_confusion_matrix(pdf: PdfPages, title: str, cm: list[list[int]]) -> None:
+    """Adds a confusion matrix visualization page to the PDF."""
+
     fig = plt.figure(figsize=(8.27, 11.69))
     ax = fig.add_subplot(111)
     fig.suptitle(title, fontsize=18, y=0.97)
@@ -58,13 +72,21 @@ def _page_confusion_matrix(pdf: PdfPages, title: str, cm: list[list[int]]) -> No
 
 
 def main() -> None:
+    """CLI entrypoint."""
+
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--eval-json", type=Path, required=True)
-    parser.add_argument("--out-pdf", type=Path, default=Path("Technical_Analysis.pdf"))
-    parser.add_argument("--project-title", type=str, default="Medical Image Analysis Tool (Segmentation + Classification)")
-    parser.add_argument("--dataset-note", type=str, default="Dataset: synthetic demo (sostituibile con dataset medico reale mantenendo lo stesso formato).")
+    parser.add_argument("--out-pdf", type=Path,
+                        default=Path("Technical_Analysis.pdf"))
+    parser.add_argument("--project-title", type=str,
+                        default="Medical Image Analysis Tool (Segmentation + Classification)")
+    parser.add_argument(
+        "--dataset-note",
+        type=str,
+        default="Dataset: Montgomery County Chest X-ray (NLM) con maschere polmoni e label TB (0=normal, 1=abnormal).",
+    )
     args = parser.parse_args()
 
     payload = json.loads(args.eval_json.read_text())
@@ -89,7 +111,7 @@ def main() -> None:
                 "Technical Analysis Document (max 10 pages)",
                 "",
                 "Problem Statement:",
-                "- Obiettivo: segmentare una regione di interesse (lesione) e classificare la presenza/assenza di condizione.",
+                "- Obiettivo: segmentare i polmoni su CXR e classificare la presenza/assenza di segni compatibili con TB.",
                 "- Rilevanza: supporto a screening/triage e riduzione del carico manuale per operatori clinici.",
                 "",
                 args.dataset_note,
@@ -113,8 +135,10 @@ def main() -> None:
             ],
         )
 
-        _page_metrics_table(pdf, "Experimental Results (Table)", scalar_metrics)
-        _page_confusion_matrix(pdf, "Experimental Results (Confusion Matrix)", cm)
+        _page_metrics_table(
+            pdf, "Experimental Results (Table)", scalar_metrics)
+        _page_confusion_matrix(
+            pdf, "Experimental Results (Confusion Matrix)", cm)
 
         _page_text(
             pdf,

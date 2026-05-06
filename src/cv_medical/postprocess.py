@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+"""
+Post-processing utilities for binary segmentation masks.
+
+The goal is to refine raw probability maps into cleaner binary masks using:
+- thresholding
+- morphological opening/closing
+- largest connected component selection (optional)
+"""
+
 from dataclasses import dataclass
 
 import cv2
@@ -8,6 +17,8 @@ import numpy as np
 
 @dataclass(frozen=True)
 class PostProcessConfig:
+    """Configuration for postprocess_mask."""
+
     threshold: float = 0.5
     open_kernel: int = 3
     close_kernel: int = 5
@@ -15,6 +26,8 @@ class PostProcessConfig:
 
 
 def postprocess_mask(prob_mask: np.ndarray, cfg: PostProcessConfig) -> np.ndarray:
+    """Converts a probability mask into a binary mask with morphology-based refinement."""
+
     if prob_mask.dtype != np.float32:
         prob_mask = prob_mask.astype(np.float32)
     mask = (prob_mask >= cfg.threshold).astype(np.uint8) * 255

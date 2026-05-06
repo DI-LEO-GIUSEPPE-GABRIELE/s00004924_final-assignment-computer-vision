@@ -1,10 +1,19 @@
 from __future__ import annotations
 
+"""
+Multi-task UNet-like architecture for joint segmentation + classification.
+
+The encoder/decoder produces pixel-wise segmentation logits, while the classification head
+operates on the bottleneck features via global pooling.
+"""
+
 import torch
 from torch import nn
 
 
 class ConvBlock(nn.Module):
+    """Two-layer Conv-BN-ReLU block used in encoder/decoder."""
+
     def __init__(self, in_ch: int, out_ch: int) -> None:
         super().__init__()
         self.net = nn.Sequential(
@@ -21,6 +30,8 @@ class ConvBlock(nn.Module):
 
 
 class UpBlock(nn.Module):
+    """Upsampling block: transpose conv + skip concatenation + ConvBlock."""
+
     def __init__(self, in_ch: int, skip_ch: int, out_ch: int) -> None:
         super().__init__()
         self.up = nn.ConvTranspose2d(in_ch, out_ch, kernel_size=2, stride=2)
@@ -29,12 +40,15 @@ class UpBlock(nn.Module):
     def forward(self, x: torch.Tensor, skip: torch.Tensor) -> torch.Tensor:
         x = self.up(x)
         if x.shape[-2:] != skip.shape[-2:]:
-            x = nn.functional.interpolate(x, size=skip.shape[-2:], mode="bilinear", align_corners=False)
+            x = nn.functional.interpolate(
+                x, size=skip.shape[-2:], mode="bilinear", align_corners=False)
         x = torch.cat([x, skip], dim=1)
         return self.conv(x)
 
 
 class MultiTaskUNet(nn.Module):
+    """UNet backbone with two heads: segmentation (1-channel) and classification (1 logit)."""
+
     def __init__(self, in_channels: int = 1, base_channels: int = 32) -> None:
         super().__init__()
         c1, c2, c3, c4, c5 = (
@@ -69,6 +83,8 @@ class MultiTaskUNet(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Returns (seg_logits, cls_logit)."""
+
         e1 = self.enc1(x)
         e2 = self.enc2(self.pool1(e1))
         e3 = self.enc3(self.pool2(e2))
