@@ -1,11 +1,11 @@
 # Medical Image Analysis Tool (Segmentation + Classification)
 
-Questo progetto implementa una pipeline completa di Computer Vision per analisi di immagini mediche con:
+This project implements an end-to-end Computer Vision pipeline for medical image analysis with:
 
-- Segmentazione binaria (ROI vs background)
-- Classificazione binaria (0/1)
+- Binary segmentation (ROI vs background)
+- Binary classification (0/1)
 
-## Requisiti
+## Requirements
 
 - Python 3
 
@@ -17,16 +17,16 @@ python3 -m venv .venv
 pip install -r requirements.txt
 ```
 
-## Dataset (formato atteso)
+## Dataset (expected format)
 
-Struttura:
+Structure:
 
 ```
 <data_root>/
   train/
     images/   (PNG)
-    masks/    (PNG, binaria)
-    labels.csv  (id,label)
+    masks/    (PNG, binary)
+    labels.csv (id,label)
   val/
     images/
     masks/
@@ -37,17 +37,17 @@ Struttura:
     labels.csv
 ```
 
-`labels.csv` ha colonne: `id,label` dove `id` è lo stem del file PNG e `label` è 0/1.
+`labels.csv` must contain columns: `id,label` where `id` matches the image/mask filename stem and `label` is 0/1.
 
-### Dataset reale consigliato (Montgomery County CXR)
+### Recommended real dataset (Montgomery County CXR)
 
-Download + conversione nel formato atteso:
+Download + conversion into the expected format:
 
 ```bash
 .venv/bin/python scripts/prepare_montgomery.py --out data/montgomery --max-samples 0 --seed 42
 ```
 
-### Dataset sintetico (solo demo/smoke-test)
+### Synthetic dataset (demo/smoke-test only)
 
 ```bash
 .venv/bin/python scripts/generate_synthetic.py --out data/synthetic --train 200 --val 50 --test 50 --size 256 --seed 42
@@ -55,10 +55,10 @@ Download + conversione nel formato atteso:
 
 ## Pipeline
 
-- Data acquisition & preprocessing: lettura grayscale, denoise (median blur), resize, normalization
-- Feature representation: feature learned con backbone CNN (UNet encoder)
-- Core logic: modello multi-task (segmentazione + classificazione)
-- Post-processing: threshold + operazioni morfologiche + largest connected component per la maschera
+- Data acquisition & preprocessing: grayscale loading, denoise (median blur), resize, normalization
+- Feature representation: learned features with a CNN backbone (UNet encoder)
+- Core logic: multi-task model (segmentation + classification)
+- Post-processing: threshold + morphological ops + largest connected component for the mask
 
 ## Training
 
@@ -66,34 +66,34 @@ Download + conversione nel formato atteso:
 .venv/bin/python scripts/train.py --data-root data/montgomery --run-dir runs/montgomery --epochs 10 --image-size 256 --batch-size 8
 ```
 
-Output:
+Outputs:
 
-- `runs/<run>/checkpoints/best.pt` e `last.pt`
+- `runs/<run>/checkpoints/best.pt` and `last.pt`
 - `runs/<run>/config.json`
 - `runs/<run>/latest_metrics.json`
 
 ## Evaluation
 
-Metriche:
+Metrics:
 
 - Segmentation: Dice, mIoU
 - Classification: Accuracy, Precision, Recall, F1, Confusion Matrix
 
-Esecuzione:
+Run:
 
 ```bash
 .venv/bin/python scripts/evaluate.py --data-root data/montgomery --split test --checkpoint runs/montgomery/checkpoints/best.pt --out runs/montgomery/eval_test.json
 ```
 
-## Inferenza su singola immagine
+## Single-image inference
 
 ```bash
-.venv/bin/python scripts/infer.py --image path/to/image.png --checkpoint runs/mtl_unet/checkpoints/best.pt --out-dir runs/mtl_unet/infer
+.venv/bin/python scripts/infer.py --image path/to/image.png --checkpoint runs/montgomery/checkpoints/best.pt --out-dir runs/montgomery/infer
 ```
 
-## Technical Analysis Document (PDF, max 10 pagine)
+## Technical Analysis Document (PDF, max 10 pages)
 
-Generazione automatica del PDF dai risultati di evaluation:
+Generate the PDF from evaluation results:
 
 ```bash
 .venv/bin/python scripts/make_report.py --eval-json runs/montgomery/eval_test.json --out-pdf Technical_Analysis.pdf --project-title "Medical Image Analysis Tool"

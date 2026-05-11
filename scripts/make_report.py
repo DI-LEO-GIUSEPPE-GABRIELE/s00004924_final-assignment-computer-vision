@@ -10,10 +10,22 @@ Output: a PDF containing problem statement, methodology, results, failure analys
 from pathlib import Path
 
 import json
+import textwrap
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
+
+
+def _wrap_lines(lines: list[str], width: int = 105) -> list[str]:
+    out: list[str] = []
+    for line in lines:
+        if not line.strip():
+            out.append("")
+            continue
+        out.extend(textwrap.wrap(line, width=width,
+                   break_long_words=False, break_on_hyphens=False))
+    return out
 
 
 def _page_text(pdf: PdfPages, title: str, lines: list[str]) -> None:
@@ -21,10 +33,15 @@ def _page_text(pdf: PdfPages, title: str, lines: list[str]) -> None:
 
     fig = plt.figure(figsize=(8.27, 11.69))
     fig.suptitle(title, fontsize=18, y=0.97)
-    y = 0.92
-    for line in lines:
+    wrapped = _wrap_lines(lines, width=105)
+    top_y = 0.92
+    bottom_y = 0.06
+    usable = max(top_y - bottom_y, 1e-6)
+    step = min(0.03, usable / max(len(wrapped), 1))
+    y = top_y
+    for line in wrapped:
         fig.text(0.07, y, line, fontsize=11, va="top")
-        y -= 0.03
+        y -= step
     pdf.savefig(fig)
     plt.close(fig)
 
@@ -85,7 +102,7 @@ def main() -> None:
     parser.add_argument(
         "--dataset-note",
         type=str,
-        default="Dataset: Montgomery County Chest X-ray (NLM) con maschere polmoni e label TB (0=normal, 1=abnormal).",
+        default="Dataset: Montgomery County Chest X-ray (NLM) with lung masks; TB label from filename suffix (0=normal, 1=abnormal).",
     )
     args = parser.parse_args()
 
@@ -110,9 +127,21 @@ def main() -> None:
             [
                 "Technical Analysis Document (max 10 pages)",
                 "",
-                "Problem Statement:",
-                "- Obiettivo: segmentare i polmoni su CXR e classificare la presenza/assenza di segni compatibili con TB.",
-                "- Rilevanza: supporto a screening/triage e riduzione del carico manuale per operatori clinici.",
+                "Problem Statement",
+                "This project targets a real-world clinical workflow: automated screening support for chest X-rays.",
+                "The system performs two tasks jointly:",
+                "- Segmentation: delineate the lung fields (binary mask).",
+                "- Classification: predict a binary label (0/1) related to TB findings.",
+                "",
+                "Why this problem is relevant",
+                "- Lung segmentation is a common pre-processing step that reduces background clutter and improves robustness.",
+                "- Binary screening helps triage large volumes of studies and prioritize suspicious cases.",
+                "- A combined segmentation+classification model allows feature sharing and provides a visual explanation (mask).",
+                "",
+                "Scope and intended use",
+                "- This is a decision-support prototype, not a diagnostic device.",
+                "- Output should be reviewed by qualified clinical staff.",
+                "- Performance can change under domain shift (hospital/site/device/protocol).",
                 "",
                 args.dataset_note,
                 f"Evaluation split: {payload.get('split', 'unknown')}",
@@ -124,14 +153,33 @@ def main() -> None:
             pdf,
             "Methodology",
             [
-                "Pipeline:",
-                "- Preprocessing: grayscale, denoise (median blur), resize, normalization; augmentation (flip/rotate) in training.",
-                "- Feature representation: feature learned con CNN (encoder UNet).",
-                "- Core logic: rete multi-task con head di segmentazione (logits pixel-wise) e head di classificazione (global pooling).",
-                "- Loss: BCEWithLogits per classificazione + (BCE + Soft Dice) per segmentazione.",
-                "- Post-processing (segmentation): threshold + morphological opening/closing + largest connected component.",
+                "End-to-end pipeline",
                 "",
-                "Implementazione: Python + OpenCV + PyTorch + scikit-learn.",
+                "1) Data acquisition and preprocessing",
+                "- Images are loaded as grayscale and denoised with a median filter (robust to salt-and-pepper artifacts).",
+                "- Each image and mask is resized to a fixed square resolution for batching.",
+                "- Intensity normalization is applied per image: (x - mean) / std to reduce scanner/exposure variance.",
+                "- Data augmentation is applied only in training: random flips and 90-degree rotations to improve invariance.",
+                "",
+                "2) Feature engineering / representation",
+                "- Learned representation with a CNN backbone (UNet encoder-decoder).",
+                "- Shared encoder features support both pixel-wise segmentation and image-level classification.",
+                "",
+                "3) Core model logic (multi-task learning)",
+                "- Segmentation head outputs a single-channel logit map (lung vs background).",
+                "- Classification head uses global average pooling on bottleneck features + a linear layer to output 1 logit.",
+                "",
+                "4) Optimization",
+                "- Loss = BCEWithLogits (classification) + BCEWithLogits (segmentation) + Soft Dice loss (segmentation).",
+                "- Optimizer: AdamW with weight decay to reduce overfitting.",
+                "",
+                "5) Post-processing (segmentation)",
+                "- Probability thresholding converts logits to a binary mask.",
+                "- Morphological opening removes small spurious regions; closing fills small holes.",
+                "- Largest connected component selection enforces a single dominant lung region when appropriate.",
+                "",
+                "Implementation stack",
+                "- Python, OpenCV (pre/post-processing), PyTorch (model/training), scikit-learn (classification metrics).",
             ],
         )
 
@@ -144,15 +192,27 @@ def main() -> None:
             pdf,
             "Failure Analysis",
             [
-                "Casi tipici di fallimento attesi (da verificare su dataset reale):",
-                "- Lesioni molto piccole: la segmentazione può essere instabile (basso Dice/mIoU).",
-                "- Basso contrasto o artefatti: aumento di falsi positivi/negativi.",
-                "- Shift di dominio (scanner/protocollo diverso): degrado sia su segmentazione che classificazione.",
+                "Observed and expected failure modes",
                 "",
-                "Mitigazioni:",
-                "- Data augmentation mirata e normalizzazione coerente.",
-                "- Calibrazione soglia e post-processing più conservativo.",
-                "- Fine-tuning su dati del dominio target e validazione cross-site.",
+                "Segmentation failures",
+                "- Poor contrast or strong acquisition artifacts may cause under-segmentation (missing peripheral lung).",
+                "- Strong field-of-view differences (cropped images) may shift the anatomy and degrade masks.",
+                "- Very bright/opaque regions can confuse boundaries and create holes or false regions.",
+                "",
+                "Classification failures",
+                "- Class imbalance can lead to high recall but low specificity (more false positives).",
+                "- Domain shift (different hospital/site/device) can change texture statistics and reduce accuracy.",
+                "- Label noise: binary TB label is weak supervision and may not perfectly match visible findings.",
+                "",
+                "Mitigations",
+                "- Expand augmentation (contrast/brightness) and use consistent intensity preprocessing.",
+                "- Tune the segmentation threshold and morphology kernels per dataset resolution.",
+                "- Calibrate classification threshold on validation data (optimize F1 or balanced accuracy).",
+                "- Fine-tune on a small labeled set from the target domain; validate cross-site when possible.",
+                "",
+                "What to report during the oral exam",
+                "- Show a few qualitative examples: correct masks, typical failures, and how post-processing changes results.",
+                "- Explain why Dice/mIoU and F1/confusion matrix are appropriate for this task.",
             ],
         )
 
@@ -160,15 +220,23 @@ def main() -> None:
             pdf,
             "Ethical Considerations",
             [
-                "Privacy:",
-                "- Usare dataset de-identificati; evitare di salvare metadati sensibili; controllare accessi e log.",
+                "Privacy and data handling",
+                "- Use de-identified data and avoid storing patient metadata in logs or filenames.",
+                "- Restrict access to raw data and follow institutional policies for medical data handling.",
                 "",
-                "Bias e fairness:",
-                "- Verificare performance stratificate (età/sesso/dispositivo) quando disponibili.",
-                "- Gestire sbilanciamento classi e valutare metriche robuste (F1, ROC/PR) dove opportuno.",
+                "Bias, fairness, and generalization",
+                "- Performance may vary across demographic groups and acquisition devices/protocols.",
+                "- Report stratified metrics when subgroup information is available.",
+                "- Monitor false negative rate carefully due to the clinical cost of missed cases.",
                 "",
-                "Uso clinico:",
-                "- Strumento di supporto, non sostituzione del giudizio clinico; documentare limiti e failure modes.",
+                "Clinical safety and limitations",
+                "- This tool is intended for decision support and requires human oversight.",
+                "- Communicate uncertainty: classification probabilities are not diagnoses.",
+                "- Document known failure cases and avoid over-claiming model capability.",
+                "",
+                "Reproducibility",
+                "- Fix random seeds for comparable experiments and keep evaluation protocols consistent.",
+                "- Track configuration, checkpoints, and metrics files to enable auditability.",
             ],
         )
 
