@@ -41,6 +41,10 @@ Structure:
 
 ### Recommended real dataset (Montgomery County CXR)
 
+Source (NLM public repository):
+
+- https://data.lhncbc.nlm.nih.gov/public/Tuberculosis-Chest-X-ray-Datasets/Montgomery-County-CXR-Set/MontgomerySet/index.html
+
 Download + conversion into the expected format:
 
 ```bash
