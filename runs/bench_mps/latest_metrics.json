@@ -1,0 +1,41 @@
+{
+  "epoch": 1,
+  "train": {
+    "cls_accuracy": 0.42857142857142855,
+    "cls_confusion_matrix": [
+      [
+        0,
+        12
+      ],
+      [
+        0,
+        9
+      ]
+    ],
+    "cls_f1": 0.6,
+    "cls_precision": 0.42857142857142855,
+    "cls_recall": 1.0,
+    "dice": 0.4509721710568383,
+    "loss_total": 2.0653251843018965,
+    "miou": 0.29430259338447023
+  },
+  "val": {
+    "cls_accuracy": 0.4,
+    "cls_confusion_matrix": [
+      [
+        0,
+        3
+      ],
+      [
+        0,
+        2
+      ]
+    ],
+    "cls_f1": 0.5714285714285714,
+    "cls_precision": 0.4,
+    "cls_recall": 1.0,
+    "dice": 0.46901044249534607,
+    "loss_total": 2.0388203461964927,
+    "miou": 0.3083584398031235
+  }
+}
