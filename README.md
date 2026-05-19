@@ -17,6 +17,12 @@ python3 -m venv .venv
 pip install -r requirements.txt
 ```
 
+## Colab (optional)
+
+If you train/evaluate on Google Colab, artifacts are stored on Google Drive (persistent storage):
+
+- https://drive.google.com/drive/u/0/folders/1qXj2uZX2uR_wSkueBEqiPSA9VLz-62tM
+
 ## Dataset (expected format)
 
 Structure:
