@@ -19,11 +19,14 @@ pip install -r requirements.txt
 
 ## Colab (optional)
 
-If you train/evaluate on Google Colab, artifacts are stored on Google Drive (persistent storage):
+If you train/evaluate on Google Colab:
+
+- Colab workbook (notebook):
+  - https://colab.research.google.com/github/DI-LEO-GIUSEPPE-GABRIELE/s00004924_final-assignment-computer-vision/blob/main/colab/CV_Project_Train.ipynb
+- Artifacts stored on Google Drive (persistent storage):
 
 - https://drive.google.com/drive/u/0/folders/1qXj2uZX2uR_wSkueBEqiPSA9VLz-62tM
 
-## Dataset (expected format)
 
 Structure:
 
@@ -94,6 +97,13 @@ Run:
 ```bash
 .venv/bin/python scripts/evaluate.py --data-root data/montgomery --split test --checkpoint runs/montgomery/checkpoints/best.pt --out runs/montgomery/eval_test.json
 ```
+
+## Results (example)
+
+Example metrics produced by `runs/montgomery/eval_test.json` (values may change with seeds/hardware):
+
+- Segmentation: Dice = 0.4349, mIoU = 0.2808
+- Classification: Accuracy = 0.7500, Precision = 0.6667, Recall = 1.0000, F1 = 0.8000
 
 ## Single-image inference
 
