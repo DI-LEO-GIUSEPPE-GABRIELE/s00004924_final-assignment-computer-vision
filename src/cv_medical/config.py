@@ -1,11 +1,20 @@
 from __future__ import annotations
 
+"""
+Configuration objects used by the training and evaluation scripts.
+
+The goal is to keep all hyperparameters in a single, serializable place so that
+each run can be reproduced and audited via runs/<run>/config.json.
+"""
+
 from dataclasses import dataclass
 from pathlib import Path
 
 
 @dataclass(frozen=True)
 class ExperimentConfig:
+    """Hyperparameters and paths for one experiment run."""
+
     data_root: Path
     run_dir: Path
     image_size: int = 256

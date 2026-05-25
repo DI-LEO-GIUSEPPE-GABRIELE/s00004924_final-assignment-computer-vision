@@ -1,14 +1,26 @@
 from __future__ import annotations
 
+"""
+Metrics and small helpers for segmentation and binary classification.
+
+Segmentation metrics:
+- Dice coefficient
+- IoU (Intersection over Union)
+"""
+
 import numpy as np
 import torch
 
 
 def sigmoid_to_mask(prob: torch.Tensor, threshold: float = 0.5) -> torch.Tensor:
+    """Converts probabilities into a float mask {0.0, 1.0} using a threshold."""
+
     return (prob >= threshold).to(dtype=torch.float32)
 
 
 def dice_coef(pred_mask: torch.Tensor, true_mask: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+    """Computes Dice coefficient per-sample for a batch of binary masks."""
+
     pred = pred_mask.reshape(pred_mask.shape[0], -1)
     true = true_mask.reshape(true_mask.shape[0], -1)
     inter = (pred * true).sum(dim=1)
@@ -17,6 +29,8 @@ def dice_coef(pred_mask: torch.Tensor, true_mask: torch.Tensor, eps: float = 1e-
 
 
 def iou_score(pred_mask: torch.Tensor, true_mask: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+    """Computes IoU per-sample for a batch of binary masks."""
+
     pred = pred_mask.reshape(pred_mask.shape[0], -1)
     true = true_mask.reshape(true_mask.shape[0], -1)
     inter = (pred * true).sum(dim=1)
@@ -25,6 +39,8 @@ def iou_score(pred_mask: torch.Tensor, true_mask: torch.Tensor, eps: float = 1e-
 
 
 def binary_confusion_counts(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, int]:
+    """Computes TP/TN/FP/FN counts for a binary classification task."""
+
     y_true = y_true.astype(int).reshape(-1)
     y_pred = y_pred.astype(int).reshape(-1)
     tp = int(((y_true == 1) & (y_pred == 1)).sum())

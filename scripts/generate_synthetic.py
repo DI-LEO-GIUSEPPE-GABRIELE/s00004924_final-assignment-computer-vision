@@ -1,5 +1,18 @@
 from __future__ import annotations
 
+"""
+Generates a small synthetic dataset in the same on-disk format as the real dataset.
+
+Purpose:
+- smoke-test the full pipeline (training, evaluation, PDF generation) without downloading real medical data
+- provide a tiny dataset to quickly verify that the code runs end-to-end
+
+Output format per split:
+- images/*.png
+- masks/*.png
+- labels.csv (id,label)
+"""
+
 import csv
 from pathlib import Path
 
@@ -8,6 +21,8 @@ import numpy as np
 
 
 def _draw_lesion(img: np.ndarray, mask: np.ndarray, rng: np.random.Generator) -> int:
+    """Draws a synthetic elliptical 'lesion' onto the image and mask."""
+
     h, w = img.shape[:2]
     center = (int(rng.integers(w * 0.2, w * 0.8)), int(rng.integers(h * 0.2, h * 0.8)))
     axes = (int(rng.integers(w * 0.05, w * 0.25)), int(rng.integers(h * 0.05, h * 0.25)))
@@ -20,6 +35,8 @@ def _draw_lesion(img: np.ndarray, mask: np.ndarray, rng: np.random.Generator) ->
 
 
 def _make_sample(size: int, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray, int]:
+    """Creates one synthetic image/mask pair and a derived binary label."""
+
     img = rng.normal(loc=110, scale=18, size=(size, size)).astype(np.float32)
     img = np.clip(img, 0, 255).astype(np.uint8)
     mask = np.zeros((size, size), dtype=np.uint8)
@@ -37,6 +54,8 @@ def _make_sample(size: int, rng: np.random.Generator) -> tuple[np.ndarray, np.nd
 
 
 def generate_dataset(out_root: Path, n_train: int, n_val: int, n_test: int, size: int, seed: int) -> None:
+    """Generates train/val/test splits and writes PNGs + labels.csv to disk."""
+
     rng = np.random.default_rng(seed)
     splits = [("train", n_train), ("val", n_val), ("test", n_test)]
 
@@ -62,6 +81,8 @@ def generate_dataset(out_root: Path, n_train: int, n_val: int, n_test: int, size
 
 
 def main() -> None:
+    """CLI entrypoint."""
+
     import argparse
 
     parser = argparse.ArgumentParser()

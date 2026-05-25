@@ -1,0 +1,21 @@
+{
+  "checkpoint": "runs/verify/checkpoints/best.pt",
+  "cls_accuracy": 0.6666666666666666,
+  "cls_confusion_matrix": [
+    [
+      5,
+      1
+    ],
+    [
+      2,
+      1
+    ]
+  ],
+  "cls_f1": 0.4,
+  "cls_precision": 0.5,
+  "cls_recall": 0.3333333333333333,
+  "dice": 0.5293114913834466,
+  "loss_total": 2.007918894290924,
+  "miou": 0.37220262322160935,
+  "split": "test"
+}
